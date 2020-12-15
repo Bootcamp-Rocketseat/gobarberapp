@@ -1,4 +1,5 @@
 import React, {useCallback, useRef} from 'react';
+import * as Yup from 'yup';
 import {
   Image,
   View,
@@ -6,10 +7,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   TextInput,
+  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import {useNavigation} from '@react-navigation/native';
 import {Form} from '@unform/mobile';
+
+import getValidationErrors from '../../utils/getValidationErrors';
 
 import Input from '../../components/Input';
 import Button from '../../components/Button';
@@ -31,9 +35,58 @@ const SignUp: React.FC = () => {
   const passwordInputRef = useRef<TextInput>(null);
   const emailInputRef = useRef<TextInput>(null);
 
-  const handleSignUp = useCallback((data: object) => {
-    console.log(data);
-  }, []);
+  interface SignUpFormData {
+    name: string;
+    email: string;
+    password: string;
+  }
+
+  const handleSignUp = useCallback(
+    async (data: SignUpFormData) => {
+      try {
+        const schema = Yup.object().shape({
+          name: Yup.string().required('Nome obrigatório'),
+          email: Yup.string()
+            .required('E-mail obrigatório')
+            .email('E-mail inválido'),
+          password: Yup.string().min(6, 'Mínimo de 6 dígitos'),
+        });
+
+        await schema.validate(data, {
+          abortEarly: false,
+        });
+
+        // await api.post('/users', data);
+
+        Alert.alert(
+          'Cadastro realizado',
+          'Agora você já pode realizar seu login no Gobarber',
+        );
+        formRef.current?.setErrors({});
+        // history.push('/');
+        navigation.navigate('SignIn');
+      } catch (error) {
+        if (error instanceof Yup.ValidationError) {
+          const errors = getValidationErrors(error);
+          // const errors = {};
+          formRef.current?.setErrors(errors);
+
+          let message = '';
+          for (var key in errors) {
+            message = message.concat(`\n * ${key}: ${errors[key]}`);
+          }
+
+          Alert.alert(
+            'Erro no cadastro',
+            `Ocorreu um erro ao fazer o cadastro:\n ${message}`,
+          );
+
+          return;
+        }
+      }
+    },
+    [navigation],
+  );
 
   return (
     <>

@@ -1,4 +1,5 @@
 import React, {useCallback, useRef} from 'react';
+import * as Yup from 'yup';
 import {
   Image,
   View,
@@ -6,11 +7,14 @@ import {
   Platform,
   ScrollView,
   TextInput,
+  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import {useNavigation} from '@react-navigation/native';
 import {Form} from '@unform/mobile';
 import {FormHandles} from '@unform/core';
+
+import getValidationErrors from '../../utils/getValidationErrors';
 
 import Input from '../../components/Input';
 import Button from '../../components/Button';
@@ -31,8 +35,41 @@ const SignIn: React.FC = () => {
   const formRef = useRef<FormHandles>(null);
   const passworInputRef = useRef<TextInput>(null);
 
-  const handleSignIn = useCallback((data: object) => {
-    console.log(data);
+  interface SignInFormData {
+    email: string;
+    password: string;
+  }
+
+  const handleSignIn = useCallback(async (data: SignInFormData) => {
+    try {
+      const schema = Yup.object().shape({
+        email: Yup.string()
+          .required('E-mail obrigatório')
+          .email('E-mail inválido'),
+        password: Yup.string().min(6, 'Mínimo de 6 dígitos'),
+      });
+
+      await schema.validate(data, {
+        abortEarly: false,
+      });
+      // await signIn({
+      //   email: data.email,
+      //   password: data.password,
+      // });
+      formRef.current?.setErrors({});
+    } catch (error) {
+      if (error instanceof Yup.ValidationError) {
+        const errors = getValidationErrors(error);
+        formRef.current?.setErrors(errors);
+
+        Alert.alert(
+          'Erro na autenticação',
+          'Ocorreu um erro ao fazer login, cheque as credenciais!',
+        );
+
+        return;
+      }
+    }
   }, []);
 
   return (
@@ -48,7 +85,7 @@ const SignIn: React.FC = () => {
             <Image source={logoImg} />
 
             <View>
-              <Title>Faça seu logon</Title>
+              <Title>Faça seu login</Title>
             </View>
 
             <Form style={{width: '100%'}} ref={formRef} onSubmit={handleSignIn}>
