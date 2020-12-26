@@ -13,6 +13,8 @@ import Icon from 'react-native-vector-icons/Feather';
 import {useNavigation} from '@react-navigation/native';
 import {Form} from '@unform/mobile';
 
+import api from '../../services/api';
+
 import getValidationErrors from '../../utils/getValidationErrors';
 
 import Input from '../../components/Input';
@@ -56,14 +58,13 @@ const SignUp: React.FC = () => {
           abortEarly: false,
         });
 
-        // await api.post('/users', data);
+        await api.post('/users', data);
 
         Alert.alert(
           'Cadastro realizado',
           'Agora você já pode realizar seu login no Gobarber',
         );
         formRef.current?.setErrors({});
-        // history.push('/');
         navigation.navigate('SignIn');
       } catch (error) {
         if (error instanceof Yup.ValidationError) {
